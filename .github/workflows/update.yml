@@ -1,0 +1,35 @@
+name: Update TOTO Data
+
+on:
+  schedule:
+    # Run after each TOTO draw: Monday and Thursday at 7:30 PM SGT (11:30 UTC)
+    - cron: '30 11 * * 1,4'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run data update
+        run: python scripts/update_data.py
+        env:
+          PYTHONPATH: .
+
+      - name: Commit updated data
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add data/
+          git diff --staged --quiet || git commit -m "Auto-update TOTO data and predictions"
+          git push
