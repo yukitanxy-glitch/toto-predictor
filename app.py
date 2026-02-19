@@ -132,8 +132,8 @@ st.sidebar.markdown("## TOTO Predictor SG")
 
 page = st.sidebar.radio(
     "Navigate",
-    ["Dashboard", "Predictions", "Model Performance", "Historical Results",
-     "Multi-Draw Strategy", "Odds & Methodology"],
+    ["Dashboard", "Quant Engine v2.0", "Predictions", "Model Performance",
+     "Historical Results", "Multi-Draw Strategy", "Odds & Methodology"],
 )
 
 st.sidebar.markdown("---")
@@ -399,7 +399,189 @@ if page == "Dashboard":
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# PAGE 2: PREDICTIONS
+# PAGE 2: QUANT ENGINE v2.0
+# ══════════════════════════════════════════════════════════════════════════
+
+elif page == "Quant Engine v2.0":
+    st.markdown('<div class="main-header">Quant Engine v2.0</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    > **Philosophy:** Instead of trying to predict winning numbers (impossible in a fair lottery),
+    > the Quant Engine maximizes **Expected Prize Value** - picking numbers that other players avoid,
+    > so IF you win, you share with fewer people.
+    """)
+
+    # Run Quant Engine
+    @st.cache_data(ttl=3600)
+    def run_quant_engine(_df):
+        from src.models.quant_engine import QuantPredictor
+        qp = QuantPredictor(_df)
+        edge_results = qp.analyze()
+        boards = qp.generate_all_boards()
+        return edge_results, boards
+
+    with st.spinner("Running Quant Engine v2.0 (edge detection + EV optimization)..."):
+        edge_results, qboards = run_quant_engine(df)
+
+    # ── Edge Detection Results ──
+    st.subheader("Phase 1: Statistical Edge Detection")
+
+    col1, col2, col3 = st.columns(3)
+    uni = edge_results['uniformity']
+    serial = edge_results['serial_independence']
+    pairs = edge_results['pair_dependence']
+
+    with col1:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-label">Uniformity Test</div>
+            <div class="stat-value">p = {uni['p_value']:.4f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if uni['significant']:
+            st.success("Numbers are NOT uniformly distributed - edge exists!")
+        else:
+            st.info("Numbers appear uniform (no frequency edge)")
+
+    with col2:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-label">Serial Independence</div>
+            <div class="stat-value">{serial['significant_count']}/49</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if serial['significant_count'] > 0:
+            st.success(f"{serial['significant_count']} numbers show serial dependence!")
+        else:
+            st.info("No serial dependence detected")
+
+    with col3:
+        sig_pairs = sum(1 for p in pairs['top_pairs'] if p['significant'])
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-label">Pair Dependence</div>
+            <div class="stat-value">{sig_pairs} pairs</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if sig_pairs > 0:
+            st.success(f"{sig_pairs} significant pair correlations found!")
+        else:
+            st.info("No significant pair correlations")
+
+    # Recency effect
+    recency = edge_results['recency_effect']
+    st.markdown("**Recency Effect Analysis:**")
+    rec_data = []
+    for key, val in recency['results'].items():
+        rec_data.append({
+            'Lookback': val['lookback_draws'],
+            'Expected Overlap': val['expected_overlap'],
+            'Observed Overlap': val['observed_mean_overlap'],
+            'Difference': val['difference'],
+            'p-value': val['p_value'],
+            'Significant': 'Yes' if val['significant'] else 'No'
+        })
+    st.dataframe(pd.DataFrame(rec_data), use_container_width=True)
+
+    verdict = edge_results['summary']
+    if verdict['any_statistical_edge_detected']:
+        st.success(f"VERDICT: {verdict['recommendation']}")
+    else:
+        st.warning(f"VERDICT: {verdict['recommendation']}")
+
+    # ── Optimized Boards ──
+    st.subheader("Phase 2: Expected Value Optimized Boards")
+
+    for b in qboards['boards']:
+        ev = b['expected_value']
+        pop_label = ('UNPOPULAR [+EV]' if ev['popularity_ratio'] < 0.8
+                     else 'Average' if ev['popularity_ratio'] < 1.2
+                     else 'Popular [-EV]')
+        pop_color = ('green' if ev['popularity_ratio'] < 0.8
+                     else 'orange' if ev['popularity_ratio'] < 1.2
+                     else 'red')
+
+        nums_html = ' '.join(
+            f'<span class="number-ball">{n}</span>' for n in b['numbers']
+        )
+
+        st.markdown(f"""
+        <div class="board-card">
+            <h3>Board {b['board_number']}: {b['strategy']}</h3>
+            <div style="margin: 1rem 0;">{nums_html}</div>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div>Sum: <b>{b['validation']['sum']}</b></div>
+                <div>Odd/Even: <b>{b['validation']['odd_count']}/{6-b['validation']['odd_count']}</b></div>
+                <div>Decades: <b>{b['validation']['decades']}</b></div>
+                <div>Popularity: <b style="color: {pop_color};">{ev['popularity_ratio']:.3f} ({pop_label})</b></div>
+            </div>
+            <div style="margin-top: 0.5rem;">
+                Expected prize if win: <b>${ev['expected_prize_if_win']:,.0f}</b>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Additional number
+    st.markdown(f"**Additional Number Prediction:** {qboards['additional_number']}")
+
+    # Coverage analysis
+    st.subheader("Coverage Analysis")
+    cov = qboards['coverage']
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Unique Numbers", f"{cov['unique_numbers']}/49")
+    with col2:
+        st.metric("Coverage", f"{cov['coverage_pct']}%")
+    with col3:
+        st.metric("Overlap Penalty", f"{cov['overlap_penalty']:.3f}")
+    with col4:
+        st.metric("Overall Score", f"{cov['total_score']:.3f}")
+
+    # Anti-popularity heatmap
+    st.subheader("Number Popularity Map (Lower = Higher Expected Value)")
+
+    from src.models.quant_engine import ExpectedValueOptimizer
+    evo = ExpectedValueOptimizer(df)
+    anti_pop = evo.compute_anti_popularity_scores()
+
+    # Create 7x7 grid
+    grid = np.zeros((7, 7))
+    labels = np.full((7, 7), '', dtype=object)
+    for num in range(1, 50):
+        row = (num - 1) // 7
+        col_idx = (num - 1) % 7
+        grid[row][col_idx] = anti_pop[num]
+        labels[row][col_idx] = str(num)
+
+    fig = go.Figure(data=go.Heatmap(
+        z=grid,
+        text=labels,
+        texttemplate="%{text}",
+        textfont={"size": 14, "color": "white"},
+        colorscale='RdYlGn',
+        showscale=True,
+        colorbar=dict(title="Anti-Pop Score"),
+    ))
+    fig.update_layout(
+        title="Number Anti-Popularity Scores (Green = High EV, Red = Low EV)",
+        height=400,
+        xaxis=dict(showticklabels=False),
+        yaxis=dict(showticklabels=False, autorange='reversed'),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("""
+    ---
+    **How it works:**
+    - Green numbers are **rarely picked** by other players (higher expected value)
+    - Red numbers are **popular** (birthdays, lucky numbers) - more prize sharing
+    - The Quant Engine picks green numbers to maximize your payout IF you win
+    - This doesn't change your odds of winning, but it changes HOW MUCH you win
+    """)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# PAGE 3: PREDICTIONS (LEGACY)
 # ══════════════════════════════════════════════════════════════════════════
 
 elif page == "Predictions":
