@@ -13,7 +13,6 @@ env/
 .pytest_cache/
 .mypy_cache/
 *.log
-data/toto_results.csv
 data/predictions_log.csv
 data/backtest_results.csv
 .streamlit/secrets.toml
