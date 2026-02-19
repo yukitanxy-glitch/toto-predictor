@@ -1,19 +1,25 @@
-name: Update TOTO Data
+name: TOTO Self-Learning Auto-Update
 
 on:
   schedule:
-    # Run after each TOTO draw: Monday and Thursday at 7:30 PM SGT (11:30 UTC)
-    - cron: '30 11 * * 1,4'
-  workflow_dispatch:  # Allow manual trigger
+    # Run after each TOTO draw:
+    # Monday at 7:45 PM SGT (11:45 UTC) - 75 min after draw
+    # Thursday at 7:45 PM SGT (11:45 UTC) - 75 min after draw
+    # Extra run at 10 PM SGT (14:00 UTC) as fallback if results were delayed
+    - cron: '45 11 * * 1,4'
+    - cron: '0 14 * * 1,4'
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
 
 jobs:
-  update-data:
+  auto-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -21,15 +27,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run data update
-        run: python scripts/update_data.py
+      - name: Run self-learning auto-update pipeline
+        run: python scripts/auto_update.py
         env:
           PYTHONPATH: .
 
-      - name: Commit updated data
+      - name: Commit updated data and predictions
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "toto-bot@github-actions"
+          git config --local user.name "TOTO Auto-Update Bot"
           git add data/
-          git diff --staged --quiet || git commit -m "Auto-update TOTO data and predictions"
+          git diff --staged --quiet || git commit -m "Auto-update: fetch latest draw, retrain models, generate predictions
+
+          Triggered by scheduled GitHub Actions workflow.
+          Pipeline: fetch -> validate -> score -> adapt -> retrain -> predict -> log"
           git push
