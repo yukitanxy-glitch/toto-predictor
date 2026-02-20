@@ -1,5 +1,5 @@
 """
-Singapore TOTO Predictor — Streamlit Web Application
+Singapore TOTO Predictor -- Streamlit Web Application
 
 Tech stack choice: Streamlit
 Justification: Fastest to build, excellent for data dashboards with Plotly charts,
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 from src.scraper import load_data
 from src import analysis
 
-# ── Page Config ──────────────────────────────────────────────────────────
+# -- Page Config ----------------------------------------------------------
 
 st.set_page_config(
     page_title="TOTO Predictor SG",
@@ -33,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS ───────────────────────────────────────────────────────────
+# -- Custom CSS -----------------------------------------------------------
 
 st.markdown("""
 <style>
@@ -92,7 +92,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ── Data Loading (Cached) ────────────────────────────────────────────────
+# -- Data Loading (Cached) ------------------------------------------------
 
 @st.cache_data(ttl=3600)
 def get_data():
@@ -126,32 +126,32 @@ def get_predictions(_df):
     return boards, ens, model_results
 
 
-# ── Sidebar ──────────────────────────────────────────────────────────────
+# -- Sidebar --------------------------------------------------------------
 
 st.sidebar.markdown("## TOTO Predictor SG")
 
 page = st.sidebar.radio(
     "Navigate",
-    ["Dashboard", "Quant Engine v2.0", "Predictions", "Model Performance",
+    ["Dashboard", "Quant Engine v3.0", "Predictions", "Model Performance",
      "Historical Results", "Multi-Draw Strategy", "Odds & Methodology"],
 )
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "**Disclaimer:** This is for educational purposes only. "
-    "TOTO is a random lottery — no model can guarantee wins."
+    "TOTO is a random lottery -- no model can guarantee wins."
 )
 
 
-# ── Load Data ────────────────────────────────────────────────────────────
+# -- Load Data ------------------------------------------------------------
 
 df = get_data()
 ana = get_analysis(df)
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 1: DASHBOARD
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 if page == "Dashboard":
     st.markdown('<div class="main-header">Statistical Analysis Dashboard</div>', unsafe_allow_html=True)
@@ -161,7 +161,7 @@ if page == "Dashboard":
     with col1:
         st.metric("Total Draws", len(df))
     with col2:
-        st.metric("Date Range", f"{df['date'].min().strftime('%Y-%m-%d')} → {df['date'].max().strftime('%Y-%m-%d')}")
+        st.metric("Date Range", f"{df['date'].min().strftime('%Y-%m-%d')} -> {df['date'].max().strftime('%Y-%m-%d')}")
     with col3:
         real = len(df[~df["is_synthetic"]]) if "is_synthetic" in df.columns else len(df)
         st.metric("Real Data", f"{real} draws")
@@ -171,7 +171,7 @@ if page == "Dashboard":
 
     st.markdown("---")
 
-    # ── 1. Frequency Bar Chart ───────────────────────────────────────────
+    # -- 1. Frequency Bar Chart -------------------------------------------
     st.subheader("Number Frequency Analysis")
 
     freq = ana.get("frequency", {})
@@ -215,7 +215,7 @@ if page == "Dashboard":
                            showarrow=False, font=dict(size=11))
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── 2. Pair Frequency Heatmap ────────────────────────────────────────
+    # -- 2. Pair Frequency Heatmap ----------------------------------------
     st.subheader("Top Pair Frequencies")
 
     pairs = ana.get("pairs_triplets", {})
@@ -234,7 +234,7 @@ if page == "Dashboard":
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── 3. Odd/Even and High/Low ─────────────────────────────────────────
+    # -- 3. Odd/Even and High/Low -----------------------------------------
     col_oe, col_hl = st.columns(2)
 
     with col_oe:
@@ -267,7 +267,7 @@ if page == "Dashboard":
                          color_discrete_sequence=px.colors.qualitative.Pastel)
             st.plotly_chart(fig, use_container_width=True)
 
-    # ── 4. Sum Range Histogram ───────────────────────────────────────────
+    # -- 4. Sum Range Histogram -------------------------------------------
     st.subheader("Sum Range Analysis")
 
     sum_data = ana.get("sum_range", {})
@@ -295,7 +295,7 @@ if page == "Dashboard":
             zone_50 = sum_data.get("zone_50", (0, 0))
             st.markdown(f"**Tight Zone (50%):** {zone_50[0]} – {zone_50[1]}")
 
-    # ── 5. Number Gap Tracker ────────────────────────────────────────────
+    # -- 5. Number Gap Tracker --------------------------------------------
     st.subheader("Number Gap Analysis")
 
     gaps_result = ana.get("gaps", {})
@@ -321,7 +321,7 @@ if page == "Dashboard":
                           barmode="overlay")
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── 6. Group Spread ──────────────────────────────────────────────────
+    # -- 6. Group Spread --------------------------------------------------
     st.subheader("Decade Group Spread")
 
     group_data = ana.get("decade_spread", {})
@@ -338,7 +338,7 @@ if page == "Dashboard":
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── 7. Day of Week Comparison ────────────────────────────────────────
+    # -- 7. Day of Week Comparison ----------------------------------------
     st.subheader("Monday vs Thursday")
 
     dow = ana.get("day_of_week", {})
@@ -366,7 +366,7 @@ if page == "Dashboard":
             st.info(f"Chi-squared test: {'Significant' if sig else 'Not significant'} "
                     f"difference between Monday and Thursday (p={p_val:.4f})")
 
-    # ── 8. Burst/Dormancy Status ─────────────────────────────────────────
+    # -- 8. Burst/Dormancy Status -----------------------------------------
     st.subheader("Burst & Dormancy Status")
 
     bd = ana.get("burst_dormancy", {})
@@ -398,99 +398,139 @@ if page == "Dashboard":
         st.dataframe(styled, use_container_width=True, height=400)
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# PAGE 2: QUANT ENGINE v2.0
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
+# PAGE 2: QUANT ENGINE v3.0
+# ==========================================================================
 
-elif page == "Quant Engine v2.0":
-    st.markdown('<div class="main-header">Quant Engine v2.0</div>', unsafe_allow_html=True)
+elif page == "Quant Engine v3.0":
+    st.markdown('<div class="main-header">Quant Engine v3.0</div>', unsafe_allow_html=True)
 
     st.markdown("""
-    > **Philosophy:** Instead of trying to predict winning numbers (impossible in a fair lottery),
-    > the Quant Engine maximizes **Expected Prize Value** - picking numbers that other players avoid,
-    > so IF you win, you share with fewer people.
+    > **Philosophy:** Exploit every micro-edge using Bayesian inference, pair network analysis,
+    > and regime detection. Maximize **Expected Prize Value** by picking numbers other players avoid.
+    > Combines 6 weighted factors for a true quant-grade composite score.
     """)
 
-    # Run Quant Engine
+    # Run Quant Engine v3.0
     @st.cache_data(ttl=3600)
-    def run_quant_engine(_df):
-        from src.models.quant_engine import QuantPredictor
-        qp = QuantPredictor(_df)
-        edge_results = qp.analyze()
-        boards = qp.generate_all_boards()
-        return edge_results, boards
+    def run_quant_engine_v3(_df):
+        from src.models.quant_engine_v3 import QuantEngineV3
+        engine = QuantEngineV3(_df)
+        report = engine.analyze()
+        boards = engine.generate_all_boards()
+        return report, boards, engine
 
-    with st.spinner("Running Quant Engine v2.0 (edge detection + EV optimization)..."):
-        edge_results, qboards = run_quant_engine(df)
+    with st.spinner("Running Quant Engine v3.0 (Bayesian + Pair Network + Regime)..."):
+        report, qboards, engine = run_quant_engine_v3(df)
 
-    # ── Edge Detection Results ──
-    st.subheader("Phase 1: Statistical Edge Detection")
+    # -- Phase 1: Regime Detection --
+    st.subheader("Phase 1: Market Regime Detection")
 
-    col1, col2, col3 = st.columns(3)
-    uni = edge_results['uniformity']
-    serial = edge_results['serial_independence']
-    pairs = edge_results['pair_dependence']
+    regime = report['regime']
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
+        regime_emoji = {"NEUTRAL": "=", "HIGH_TREND": "^", "LOW_TREND": "v",
+                        "HIGH_DOMINANT": "^", "LOW_DOMINANT": "v"}
         st.markdown(f"""
         <div class="stat-box">
-            <div class="stat-label">Uniformity Test</div>
-            <div class="stat-value">p = {uni['p_value']:.4f}</div>
+            <div class="stat-label">Current Regime</div>
+            <div class="stat-value" style="font-size:1.2rem;">{regime['regime']}</div>
         </div>
         """, unsafe_allow_html=True)
-        if uni['significant']:
-            st.success("Numbers are NOT uniformly distributed - edge exists!")
-        else:
-            st.info("Numbers appear uniform (no frequency edge)")
-
     with col2:
         st.markdown(f"""
         <div class="stat-box">
-            <div class="stat-label">Serial Independence</div>
-            <div class="stat-value">{serial['significant_count']}/49</div>
+            <div class="stat-label">Sum Trend</div>
+            <div class="stat-value">{regime['sum_trend']:+.1f}</div>
         </div>
         """, unsafe_allow_html=True)
-        if serial['significant_count'] > 0:
-            st.success(f"{serial['significant_count']} numbers show serial dependence!")
-        else:
-            st.info("No serial dependence detected")
-
     with col3:
-        sig_pairs = sum(1 for p in pairs['top_pairs'] if p['significant'])
         st.markdown(f"""
         <div class="stat-box">
-            <div class="stat-label">Pair Dependence</div>
-            <div class="stat-value">{sig_pairs} pairs</div>
+            <div class="stat-label">High/Low Ratio</div>
+            <div class="stat-value">{regime['high_ratio']:.3f}</div>
         </div>
         """, unsafe_allow_html=True)
-        if sig_pairs > 0:
-            st.success(f"{sig_pairs} significant pair correlations found!")
-        else:
-            st.info("No significant pair correlations")
+    with col4:
+        st.markdown(f"""
+        <div class="stat-box">
+            <div class="stat-label">Odd Ratio</div>
+            <div class="stat-value">{regime['odd_ratio']:.3f}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Recency effect
-    recency = edge_results['recency_effect']
-    st.markdown("**Recency Effect Analysis:**")
-    rec_data = []
-    for key, val in recency['results'].items():
-        rec_data.append({
-            'Lookback': val['lookback_draws'],
-            'Expected Overlap': val['expected_overlap'],
-            'Observed Overlap': val['observed_mean_overlap'],
-            'Difference': val['difference'],
-            'p-value': val['p_value'],
-            'Significant': 'Yes' if val['significant'] else 'No'
-        })
-    st.dataframe(pd.DataFrame(rec_data), use_container_width=True)
-
-    verdict = edge_results['summary']
-    if verdict['any_statistical_edge_detected']:
-        st.success(f"VERDICT: {verdict['recommendation']}")
+    recs = regime.get('recommendations', {})
+    prefer = recs.get('prefer_range', 'balanced')
+    if prefer == 'high':
+        st.success("Regime favors HIGH numbers (25-49). Boards adjusted accordingly.")
+    elif prefer == 'low':
+        st.success("Regime favors LOW numbers (1-24). Boards adjusted accordingly.")
     else:
-        st.warning(f"VERDICT: {verdict['recommendation']}")
+        st.info("Regime is balanced. No directional bias applied.")
 
-    # ── Optimized Boards ──
-    st.subheader("Phase 2: Expected Value Optimized Boards")
+    # -- Phase 2: Bayesian Edge Detection --
+    st.subheader("Phase 2: Bayesian Edge Detection")
+
+    edge_numbers = report['edge_numbers']
+    hot_nums = [(n, p) for n, p in edge_numbers if p['p_hot'] > 0.7]
+    cold_nums = [(n, p) for n, p in edge_numbers if p['p_hot'] < 0.3]
+
+    col_h, col_c = st.columns(2)
+    with col_h:
+        st.markdown("**HOT Numbers** (Bayesian P(hot) > 0.7)")
+        if hot_nums:
+            for num, post in sorted(hot_nums, key=lambda x: -x[1]['p_hot'])[:10]:
+                st.write(f"  Number **{num}**: P(hot) = {post['p_hot']:.3f}, "
+                         f"Edge = {post['edge_over_fair']:+.4f}")
+        else:
+            st.info("No statistically hot numbers detected")
+
+    with col_c:
+        st.markdown("**COLD Numbers** (Bayesian P(hot) < 0.3)")
+        if cold_nums:
+            for num, post in sorted(cold_nums, key=lambda x: x[1]['p_hot'])[:10]:
+                st.write(f"  Number **{num}**: P(hot) = {post['p_hot']:.3f}, "
+                         f"Edge = {post['edge_over_fair']:+.4f}")
+        else:
+            st.info("No statistically cold numbers detected")
+
+    st.markdown(f"**Total numbers with Bayesian edge:** {len(edge_numbers)} out of 49")
+
+    # -- Phase 3: Pair Network Centrality --
+    st.subheader("Phase 3: Pair Network Centrality (PageRank-style)")
+
+    top_central = report['top_centrality']
+    cent_df = pd.DataFrame([
+        {"Number": n, "Centrality Score": round(score, 4)}
+        for n, score in top_central
+    ])
+    fig = px.bar(cent_df, x="Number", y="Centrality Score",
+                 title="Top 10 Numbers by Pair Network Centrality",
+                 template="plotly_dark", color="Centrality Score",
+                 color_continuous_scale="Viridis")
+    fig.update_layout(height=350)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.caption("High centrality = this number co-occurs strongly with many other frequent numbers")
+
+    # -- Phase 4: Composite Rankings --
+    st.subheader("Phase 4: Composite Score Rankings")
+
+    top_composite = report['top_composite']
+    comp_df = pd.DataFrame([
+        {"Rank": i+1, "Number": n, "Composite": s['composite'],
+         "Bayesian": s['bayesian'], "Momentum": s['momentum'],
+         "Centrality": s['centrality'], "Anti-Pop": s['anti_pop'],
+         "Regime": s['regime'], "Overdue": s['overdue']}
+        for i, (n, s) in enumerate(top_composite)
+    ])
+    st.dataframe(comp_df, use_container_width=True, height=400)
+
+    st.caption("Weights: Bayesian 25% | Momentum 15% | Centrality 15% | Anti-Pop 25% | Regime 10% | Overdue 10%")
+
+    # -- Phase 5: Optimized Boards --
+    st.subheader("Phase 5: Expected Value Optimized Boards")
 
     for b in qboards['boards']:
         ev = b['expected_value']
@@ -502,7 +542,7 @@ elif page == "Quant Engine v2.0":
                      else 'red')
 
         nums_html = ' '.join(
-            f'<span class="number-ball">{n}</span>' for n in b['numbers']
+            f'<span class="number-ball ball-main">{n}</span>' for n in b['numbers']
         )
 
         st.markdown(f"""
@@ -521,68 +561,71 @@ elif page == "Quant Engine v2.0":
         </div>
         """, unsafe_allow_html=True)
 
+        # Per-number breakdown
+        with st.expander(f"Number Details - Board {b['board_number']}"):
+            det_df = pd.DataFrame(b['number_details'])
+            st.dataframe(det_df, use_container_width=True)
+
     # Additional number
     st.markdown(f"**Additional Number Prediction:** {qboards['additional_number']}")
 
     # Coverage analysis
     st.subheader("Coverage Analysis")
     cov = qboards['coverage']
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Unique Numbers", f"{cov['unique_numbers']}/49")
     with col2:
         st.metric("Coverage", f"{cov['coverage_pct']}%")
     with col3:
         st.metric("Overlap Penalty", f"{cov['overlap_penalty']:.3f}")
-    with col4:
-        st.metric("Overall Score", f"{cov['total_score']:.3f}")
 
-    # Anti-popularity heatmap
+    # Anti-popularity heatmap (using v3.0's built-in scores)
     st.subheader("Number Popularity Map (Lower = Higher Expected Value)")
 
-    from src.models.quant_engine import ExpectedValueOptimizer
-    evo = ExpectedValueOptimizer(df)
-    anti_pop = evo.compute_anti_popularity_scores()
+    anti_pop = engine._anti_popularity
+    if anti_pop:
+        # Create 7x7 grid
+        grid = np.zeros((7, 7))
+        labels = np.full((7, 7), '', dtype=object)
+        for num in range(1, 50):
+            row = (num - 1) // 7
+            col_idx = (num - 1) % 7
+            grid[row][col_idx] = anti_pop[num]
+            labels[row][col_idx] = str(num)
 
-    # Create 7x7 grid
-    grid = np.zeros((7, 7))
-    labels = np.full((7, 7), '', dtype=object)
-    for num in range(1, 50):
-        row = (num - 1) // 7
-        col_idx = (num - 1) % 7
-        grid[row][col_idx] = anti_pop[num]
-        labels[row][col_idx] = str(num)
-
-    fig = go.Figure(data=go.Heatmap(
-        z=grid,
-        text=labels,
-        texttemplate="%{text}",
-        textfont={"size": 14, "color": "white"},
-        colorscale='RdYlGn',
-        showscale=True,
-        colorbar=dict(title="Anti-Pop Score"),
-    ))
-    fig.update_layout(
-        title="Number Anti-Popularity Scores (Green = High EV, Red = Low EV)",
-        height=400,
-        xaxis=dict(showticklabels=False),
-        yaxis=dict(showticklabels=False, autorange='reversed'),
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        fig = go.Figure(data=go.Heatmap(
+            z=grid,
+            text=labels,
+            texttemplate="%{text}",
+            textfont={"size": 14, "color": "white"},
+            colorscale='RdYlGn',
+            showscale=True,
+            colorbar=dict(title="Anti-Pop Score"),
+        ))
+        fig.update_layout(
+            title="Number Anti-Popularity Scores (Green = High EV, Red = Low EV)",
+            height=400,
+            xaxis=dict(showticklabels=False),
+            yaxis=dict(showticklabels=False, autorange='reversed'),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("""
     ---
-    **How it works:**
-    - Green numbers are **rarely picked** by other players (higher expected value)
-    - Red numbers are **popular** (birthdays, lucky numbers) - more prize sharing
-    - The Quant Engine picks green numbers to maximize your payout IF you win
-    - This doesn't change your odds of winning, but it changes HOW MUCH you win
+    **How Quant Engine v3.0 works:**
+    - **Bayesian Scoring** (25%): Beta-Binomial conjugate prior for shrinkage-optimal number probabilities
+    - **Momentum** (15%): Recent 3-month posterior captures short-term trends
+    - **Pair Network** (15%): Eigenvector centrality finds numbers central in co-occurrence graph
+    - **Anti-Popularity** (25%): Avoid birthdays, lucky numbers - maximize prize if you win
+    - **Regime** (10%): Adapts to current hot/cold/neutral market conditions
+    - **Overdue** (10%): Sigmoid-mapped gap analysis for timing signals
     """)
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 3: PREDICTIONS (LEGACY)
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 elif page == "Predictions":
     st.markdown('<div class="main-header">Next Draw Predictions</div>', unsafe_allow_html=True)
@@ -637,7 +680,7 @@ elif page == "Predictions":
         """, unsafe_allow_html=True)
 
         # Expandable filter details
-        with st.expander(f"Filter Details — {b['name']}"):
+        with st.expander(f"Filter Details -- {b['name']}"):
             for f in b["filter_result"]["results"]:
                 icon = "✅" if f["passed"] else "❌"
                 st.write(f"{icon} **{f['name']}:** {f['detail']}")
@@ -653,9 +696,9 @@ elif page == "Predictions":
     st.dataframe(rank_df, use_container_width=True, height=500)
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 3: MODEL PERFORMANCE
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 elif page == "Model Performance":
     st.markdown('<div class="main-header">Model Performance & Backtesting</div>', unsafe_allow_html=True)
@@ -713,9 +756,9 @@ elif page == "Model Performance":
             st.markdown(f"**{name}:** {desc}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 4: HISTORICAL RESULTS
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 elif page == "Historical Results":
     st.markdown('<div class="main-header">Historical Results Browser</div>', unsafe_allow_html=True)
@@ -769,9 +812,9 @@ elif page == "Historical Results":
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 5: MULTI-DRAW STRATEGY
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 elif page == "Multi-Draw Strategy":
     st.markdown('<div class="main-header">Multi-Draw Strategy</div>', unsafe_allow_html=True)
@@ -818,9 +861,9 @@ elif page == "Multi-Draw Strategy":
         st.write(f"- **{strategy_name.replace('_', ' ').title()}:** {desc}")
 
 
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 # PAGE 6: ODDS & METHODOLOGY
-# ══════════════════════════════════════════════════════════════════════════
+# ==========================================================================
 
 elif page == "Odds & Methodology":
     st.markdown('<div class="main-header">Odds & Methodology</div>', unsafe_allow_html=True)
@@ -885,13 +928,13 @@ elif page == "Odds & Methodology":
 
     ### Hard Filters (7 Rules)
     Every generated board must pass ALL filters:
-    1. **Sum Rule** — within historical 70% optimal zone
-    2. **Odd/Even** — must be 3/3, 4/2, or 2/4
-    3. **High/Low** — must be 3/3, 4/2, or 2/4
-    4. **Group Spread** — at least 3 decade groups
-    5. **Consecutive** — max 2 consecutive numbers
-    6. **No Duplicate** — not matching any recent win
-    7. **Cluster Fit** — within common cluster profiles
+    1. **Sum Rule** -- within historical 70% optimal zone
+    2. **Odd/Even** -- must be 3/3, 4/2, or 2/4
+    3. **High/Low** -- must be 3/3, 4/2, or 2/4
+    4. **Group Spread** -- at least 3 decade groups
+    5. **Consecutive** -- max 2 consecutive numbers
+    6. **No Duplicate** -- not matching any recent win
+    7. **Cluster Fit** -- within common cluster profiles
     """)
 
     # Honest disclaimer

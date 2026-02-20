@@ -537,10 +537,10 @@ def run_auto_update():
     ens = ensemble_predict(df, {"weighted_scoring": ws, "monte_carlo": mc, "markov_chain": mk})
     legacy_boards = generate_all_boards(ens["rankings"], df)
 
-    # Run Quant Engine v2.0
-    print("  Running Quant Engine v2.0...")
-    from src.models.quant_engine import QuantPredictor
-    qp = QuantPredictor(df)
+    # Run Quant Engine v3.0
+    print("  Running Quant Engine v3.0 (Bayesian + Pair Network + Regime)...")
+    from src.models.quant_engine_v3 import QuantEngineV3
+    qp = QuantEngineV3(df)
     qp.analyze()
     quant_boards = qp.generate_all_boards()
 
