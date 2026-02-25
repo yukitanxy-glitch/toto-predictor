@@ -1,0 +1,4 @@
+board_number,strategy,numbers,confidence,popularity_ratio,expected_prize
+1,Composite Optimized (Accuracy+EV),"[2, 22, 24, 35, 43, 44]",0.611,1.024,4658767.0
+2,Max Expected Value (Anti-Popular Boost),"[4, 12, 32, 34, 37, 49]",0.5,1.111,4631862.0
+3,Sequence Momentum (Lag+Reversion Focus),"[1, 7, 14, 40, 42, 46]",0.528,1.194,4606741.0

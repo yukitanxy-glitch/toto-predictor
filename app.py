@@ -132,7 +132,7 @@ st.sidebar.markdown("## TOTO Predictor SG")
 
 page = st.sidebar.radio(
     "Navigate",
-    ["Dashboard", "Quant Engine v3.0", "Predictions", "Model Performance",
+    ["Dashboard", "Quant Engine v4.0", "Predictions", "Model Performance",
      "Historical Results", "Multi-Draw Strategy", "Odds & Methodology"],
 )
 
@@ -399,29 +399,30 @@ if page == "Dashboard":
 
 
 # ==========================================================================
-# PAGE 2: QUANT ENGINE v3.0
+# PAGE 2: QUANT ENGINE v4.0
 # ==========================================================================
 
-elif page == "Quant Engine v3.0":
-    st.markdown('<div class="main-header">Quant Engine v3.0</div>', unsafe_allow_html=True)
+elif page == "Quant Engine v4.0":
+    st.markdown('<div class="main-header">Quant Engine v4.0</div>', unsafe_allow_html=True)
 
     st.markdown("""
-    > **Philosophy:** Exploit every micro-edge using Bayesian inference, pair network analysis,
-    > and regime detection. Maximize **Expected Prize Value** by picking numbers other players avoid.
-    > Combines 6 weighted factors for a true quant-grade composite score.
+    > **Philosophy:** Two-stage approach: (1) Maximize **prediction accuracy** using 7 independent
+    > signals (Bayesian, momentum, time-decayed pairs, sequence analysis, mean reversion, entropy,
+    > triplets), then (2) optimize **Expected Prize Value** via anti-popularity.
+    > Deterministic greedy board construction. No gambler's fallacy.
     """)
 
-    # Run Quant Engine v3.0
+    # Run Quant Engine v4.0
     @st.cache_data(ttl=3600)
-    def run_quant_engine_v3(_df):
-        from src.models.quant_engine_v3 import QuantEngineV3
-        engine = QuantEngineV3(_df)
+    def run_quant_engine_v4(_df):
+        from src.models.quant_engine_v4 import QuantEngineV4
+        engine = QuantEngineV4(_df)
         report = engine.analyze()
         boards = engine.generate_all_boards()
         return report, boards, engine
 
-    with st.spinner("Running Quant Engine v3.0 (Bayesian + Pair Network + Regime)..."):
-        report, qboards, engine = run_quant_engine_v3(df)
+    with st.spinner("Running Quant Engine v4.0 (7-factor composite + greedy optimization)..."):
+        report, qboards, engine = run_quant_engine_v4(df)
 
     # -- Phase 1: Regime Detection --
     st.subheader("Phase 1: Market Regime Detection")
@@ -430,8 +431,6 @@ elif page == "Quant Engine v3.0":
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        regime_emoji = {"NEUTRAL": "=", "HIGH_TREND": "^", "LOW_TREND": "v",
-                        "HIGH_DOMINANT": "^", "LOW_DOMINANT": "v"}
         st.markdown(f"""
         <div class="stat-box">
             <div class="stat-label">Current Regime</div>
@@ -469,6 +468,13 @@ elif page == "Quant Engine v3.0":
     else:
         st.info("Regime is balanced. No directional bias applied.")
 
+    # Mutual information
+    mi = report.get('mutual_info', {})
+    if mi:
+        st.caption(f"Draw-to-draw overlap: {mi.get('observed_overlap', 0):.3f} "
+                   f"(expected: {mi.get('expected_overlap', 0):.3f}, "
+                   f"excess: {mi.get('excess_overlap', 0):+.3f})")
+
     # -- Phase 2: Bayesian Edge Detection --
     st.subheader("Phase 2: Bayesian Edge Detection")
 
@@ -497,40 +503,25 @@ elif page == "Quant Engine v3.0":
 
     st.markdown(f"**Total numbers with Bayesian edge:** {len(edge_numbers)} out of 49")
 
-    # -- Phase 3: Pair Network Centrality --
-    st.subheader("Phase 3: Pair Network Centrality (PageRank-style)")
-
-    top_central = report['top_centrality']
-    cent_df = pd.DataFrame([
-        {"Number": n, "Centrality Score": round(score, 4)}
-        for n, score in top_central
-    ])
-    fig = px.bar(cent_df, x="Number", y="Centrality Score",
-                 title="Top 10 Numbers by Pair Network Centrality",
-                 template="plotly_dark", color="Centrality Score",
-                 color_continuous_scale="Viridis")
-    fig.update_layout(height=350)
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.caption("High centrality = this number co-occurs strongly with many other frequent numbers")
-
-    # -- Phase 4: Composite Rankings --
-    st.subheader("Phase 4: Composite Score Rankings")
+    # -- Phase 3: Composite Rankings --
+    st.subheader("Phase 3: 7-Factor Composite Rankings")
 
     top_composite = report['top_composite']
     comp_df = pd.DataFrame([
         {"Rank": i+1, "Number": n, "Composite": s['composite'],
-         "Bayesian": s['bayesian'], "Momentum": s['momentum'],
-         "Centrality": s['centrality'], "Anti-Pop": s['anti_pop'],
-         "Regime": s['regime'], "Overdue": s['overdue']}
+         "Prediction": s.get('prediction', 0),
+         "Bayesian": s['bayesian'], "Momentum": s.get('momentum', 0),
+         "Sequence": s.get('sequence', 0), "Reversion": s.get('reversion', 0),
+         "Entropy": s.get('entropy', 0), "Anti-Pop": s.get('anti_pop', 0)}
         for i, (n, s) in enumerate(top_composite)
     ])
     st.dataframe(comp_df, use_container_width=True, height=400)
 
-    st.caption("Weights: Bayesian 25% | Momentum 15% | Centrality 15% | Anti-Pop 25% | Regime 10% | Overdue 10%")
+    st.caption("Prediction: Bay 20% + Mom 15% + Pairs 15% + Seq 20% + Rev 15% + Ent 10% + Trip 5% | "
+               "Composite: 70% Prediction + 30% Anti-Pop")
 
-    # -- Phase 5: Optimized Boards --
-    st.subheader("Phase 5: Expected Value Optimized Boards")
+    # -- Phase 4: Optimized Boards --
+    st.subheader("Phase 4: Predicted Boards (Greedy Optimized)")
 
     for b in qboards['boards']:
         ev = b['expected_value']
@@ -557,6 +548,7 @@ elif page == "Quant Engine v3.0":
             </div>
             <div style="margin-top: 0.5rem;">
                 Expected prize if win: <b>${ev['expected_prize_if_win']:,.0f}</b>
+                | Confidence: <b>{b.get('confidence', 0):.1%}</b>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -580,7 +572,7 @@ elif page == "Quant Engine v3.0":
     with col3:
         st.metric("Overlap Penalty", f"{cov['overlap_penalty']:.3f}")
 
-    # Anti-popularity heatmap (using v3.0's built-in scores)
+    # Anti-popularity heatmap (using v4.0's built-in scores)
     st.subheader("Number Popularity Map (Lower = Higher Expected Value)")
 
     anti_pop = engine._anti_popularity
@@ -613,13 +605,16 @@ elif page == "Quant Engine v3.0":
 
     st.markdown("""
     ---
-    **How Quant Engine v3.0 works:**
-    - **Bayesian Scoring** (25%): Beta-Binomial conjugate prior for shrinkage-optimal number probabilities
-    - **Momentum** (15%): Recent 3-month posterior captures short-term trends
-    - **Pair Network** (15%): Eigenvector centrality finds numbers central in co-occurrence graph
-    - **Anti-Popularity** (25%): Avoid birthdays, lucky numbers - maximize prize if you win
-    - **Regime** (10%): Adapts to current hot/cold/neutral market conditions
-    - **Overdue** (10%): Sigmoid-mapped gap analysis for timing signals
+    **How Quant Engine v4.0 works:**
+    - **Bayesian Scoring** (20%): Beta-Binomial conjugate prior with time-decay weighting
+    - **Momentum** (15%): Recent posterior captures short-term frequency trends
+    - **Pair Network** (15%): Time-decayed eigenvector centrality (half-life=200 draws)
+    - **Sequence/Lag** (20%): Autoregressive features - lag appearance, rolling freq, repeat probability
+    - **Mean Reversion** (15%): Z-score of short vs long window frequency detects reversals
+    - **Entropy** (10%): Information-theoretic surprise scoring via -log2(P)
+    - **Triplet** (5%): Co-occurrence of number triplets beyond pair analysis
+    - **Anti-Popularity** (30% of final score): EV optimization applied AFTER prediction scoring
+    - **Board Generation**: Deterministic greedy selection (no stochastic sampling)
     """)
 
 

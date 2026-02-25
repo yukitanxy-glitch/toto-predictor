@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TOTO Self-Learning Auto-Update Pipeline v3.0
+TOTO Self-Learning Auto-Update Pipeline v4.0
 
 This script is designed to run automatically after each TOTO draw.
 It handles the FULL lifecycle:
@@ -385,7 +385,7 @@ class AdaptiveWeights:
 def run_auto_update():
     """Full self-learning auto-update pipeline."""
     print("=" * 70)
-    print("TOTO SELF-LEARNING AUTO-UPDATE PIPELINE v3.0")
+    print("TOTO SELF-LEARNING AUTO-UPDATE PIPELINE v4.0")
     print("=" * 70)
     print(f"\n[SCHEDULE]")
     print(DrawCalendar.format_schedule())
@@ -537,10 +537,10 @@ def run_auto_update():
     ens = ensemble_predict(df, {"weighted_scoring": ws, "monte_carlo": mc, "markov_chain": mk})
     legacy_boards = generate_all_boards(ens["rankings"], df)
 
-    # Run Quant Engine v3.0
-    print("  Running Quant Engine v3.0 (Bayesian + Pair Network + Regime)...")
-    from src.models.quant_engine_v3 import QuantEngineV3
-    qp = QuantEngineV3(df)
+    # Run Quant Engine v4.0
+    print("  Running Quant Engine v4.0 (Bayesian + Entropy + Mean Reversion + Sequence)...")
+    from src.models.quant_engine_v4 import QuantEngineV4
+    qp = QuantEngineV4(df)
     qp.analyze()
     quant_boards = qp.generate_all_boards()
 
@@ -580,7 +580,7 @@ def run_auto_update():
     print(f"  PREDICTIONS FOR NEXT DRAW: {next_draw.strftime('%Y-%m-%d (%A)')}")
     print(f"{'=' * 70}")
 
-    print(f"\n  QUANT ENGINE v2.0 (Expected Value Optimized):")
+    print(f"\n  QUANT ENGINE v4.0 (Expected Value Optimized):")
     for b in quant_boards['boards']:
         nums = ', '.join(str(n) for n in b['numbers'])
         ev = b['expected_value']

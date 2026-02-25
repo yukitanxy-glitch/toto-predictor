@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Standalone prediction script.
-Runs both the legacy ensemble pipeline AND the Quant Engine v3.0.
+Runs both the legacy ensemble pipeline AND the Quant Engine v4.0.
 """
 import os
 import sys
@@ -13,7 +13,7 @@ from src.models.weighted_scoring import predict as ws_predict
 from src.models.monte_carlo import predict as mc_predict
 from src.models.markov_chain import predict as mk_predict
 from src.models.ensemble import predict as ensemble_predict
-from src.models.quant_engine_v3 import QuantEngineV3
+from src.models.quant_engine_v4 import QuantEngineV4
 from src.predictor import generate_all_boards
 
 
@@ -76,10 +76,10 @@ def main():
     # QUANT ENGINE v3.0
     # ================================================================
     print(f"\n\n{'='*70}")
-    print("QUANT ENGINE v3.0 - BAYESIAN + PAIR NETWORK + REGIME")
+    print("QUANT ENGINE v4.0 - BAYESIAN + ENTROPY + MEAN REVERSION + SEQUENCE")
     print(f"{'='*70}")
 
-    engine = QuantEngineV3(df)
+    engine = QuantEngineV4(df)
     report = engine.analyze()
 
     # Regime
@@ -94,12 +94,19 @@ def main():
         print(f"    Number {num:2d}: P(hot)={post['p_hot']:.3f} ({label}), "
               f"edge={post['edge_over_fair']:+.4f}")
 
-    # Top composite
-    print(f"\n  Top 15 Composite Scores:")
+    # Top prediction scores (accuracy-only)
+    print(f"\n  Top 15 Prediction Scores (pre-EV):")
+    for i, (num, s) in enumerate(report['top_prediction']):
+        print(f"    #{i+1:2d}. Number {num:2d} - Pred: {s['prediction']:.4f} "
+              f"(Bay:{s['bayesian']:.2f} Mom:{s['momentum']:.2f} "
+              f"Seq:{s['sequence']:.2f} Rev:{s['reversion']:.2f} "
+              f"Ent:{s['entropy']:.2f})")
+
+    # Top composite scores (prediction + anti-pop)
+    print(f"\n  Top 15 Composite Scores (with EV):")
     for i, (num, s) in enumerate(report['top_composite']):
         print(f"    #{i+1:2d}. Number {num:2d} - Composite: {s['composite']:.4f} "
-              f"(Bay:{s['bayesian']:.2f} Mom:{s['momentum']:.2f} "
-              f"Cent:{s['centrality']:.2f} AntiPop:{s['anti_pop']:.2f})")
+              f"(Pred:{s['prediction']:.3f} AntiPop:{s['anti_pop']:.2f})")
 
     # Generate quant boards
     qboards = engine.generate_all_boards()
@@ -109,6 +116,7 @@ def main():
         ev = b['expected_value']
         print(f"\n  Board {b['board_number']} [{b['strategy']}]:")
         print(f"    Numbers: {nums_str}")
+        print(f"    Confidence: {b.get('confidence', 0):.1%}")
         print(f"    Sum: {b['validation']['sum']} | "
               f"Odd/Even: {b['validation']['odd_count']}/{6-b['validation']['odd_count']} | "
               f"Decades: {b['validation']['decades']}")
